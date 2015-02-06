@@ -1,13 +1,11 @@
 #!/bin/bash          
 
 	# Author: Daniel E. Krutz
-	# Description: Scrape newest repos from existing VCS
-
+	# Description: Scrape newest repos from existing GIT Reop
 
 
 	# Script location. Must be placed near top of script
 	MainScriptLoc=`pwd`
-
 
 	# Location of directory to output repo files to
 	projectFiles=repos
@@ -19,9 +17,6 @@
 	rm -rf $projectFiles
 	mkdir -p $projectFiles
 
-	### Output Location
-	#mkdir -p Output
-
 	### Logging
 	mkdir -p logs/
 	date1=$(date +"%s") ## Start date of the script
@@ -30,14 +25,9 @@
 	touch $logLocation
 	echo "Start Scraper: " `date` >> $logLocation
 	
-	#############################################
-	##### Functions
-
+	### Since this will attempt to download the newest versions of all repos, all should be initially set to be 0
 	echo "Set isRepoPulled = 0"
 	sqlite3 $db  "update appdata set isRepoPulled = 0;"
-
-
-
 
 	OutputList=`sqlite3 $db "select appID, name, source_code from appData where source_code like '%.git'"`;
 	for ROW in $OutputList; do
@@ -45,8 +35,6 @@
 	    appID=`echo $ROW | awk '{split($0,a,"|"); print a[1]}'`
 	    appname=`echo $ROW | awk '{split($0,a,"|"); print a[2]}'`
 	    source_code=`echo $ROW | awk '{split($0,a,"|"); print a[3]}'`
-
-
 
 		echo "***Clone Repo $appID $appname : " `date` >> $logLocation
 
@@ -59,50 +47,19 @@
 			echo "******Clone Complete $appID $appname : " `date` >> ../$logLocation
 			cd $MainScriptLoc
 
-
 			# update the DB with the pull information
+			### Set that it was updated
+			sqlite3 $db  "update appdata set isRepoPulled = 1 where appID = $appID;"
+
+			## Update the date field
+			sqlite3 $db  "update appdata set repopulldate = '`date`' where appID = $appID;"
 
 		else
 			echo $appID " " $appname
 			echo "******$appID $appname Not Found: " `date` >> $logLocation
 		fi
-	    #echo $appID
-	    #echo $appname
-	    #echo $source_code
-	     
-	    ### Now clone the repo
-
-
-
 
 	done
-
-
-	#while read a b c
-	#do
-	#    echo "..${a}..${b}..${c}.."
-	#done < <(echo "select appID, source_code, source_code from appData where source_code like '%.git'" | $db)
-
-
-
-
-
-
-
-
-	## AppID, source_code, 
-
-
-	### Loop through all the appIDs where a .git repo is found
-	#	select appID, source_code from appData where source_code like '%.git'
-#	sqlite3 $db "select appID from appData where source_code like '%.git'" | while read appID; do
-  		 #echo $appID
-  		 # Now get the rest of the data
-
-
-#	done
-
-
 
 	diff=$(($date2-$date1))
 	echo "Total Running Time $(($diff / 60)) minutes and $(($diff % 60)) seconds."  >> $logLocation
@@ -112,6 +69,5 @@
 #### Todo
 # Logging
 #	Fix running time
-
-### To check and make sure that all values are being logged properly
+# Find other applications from the F-Droid repo
 
